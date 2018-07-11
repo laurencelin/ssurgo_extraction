@@ -5,7 +5,8 @@ chtexgrpTitle=c('texture','stratextsflag','rvindicator','texdesc','chkey','chtgk
 chtexturTitle=c('texcl','lieutex','chtgkey','chtkey')
 extractVar = c('permeability','H2Ocapacity','bulkdensity','SHC','erodibility','FC','porosity','thickness','OM')
 
-target = 'VA113/tabular'
+arg=commandArgs(T)
+target = paste(arg[1],'/tabular',sep='') # e.g., 'VA113/tabular'
 
 mapunit = read.table(paste(target,'/mapunit.txt',sep=''),sep='|') #mukey
 colnames(mapunit) = mapunitTitle
@@ -89,7 +90,7 @@ for(i in 1:length(mukey)){
 	
 }#i
 
-write.csv(mukeyHold,'VA113_ssurgo_extract.csv',row.names=F)
+write.csv(mukeyHold, paste(arg[1],'/ssurgo_extract.csv',sep=''),row.names=F)
 
 
 
