@@ -5,7 +5,7 @@ library(rgrass7)
 rast = readRAST('soil_ssurgo')
 
 
-soil_cat_mukey = arg[1] # product from "grass74 $LOCATION/$MAPSET --exec v.db.select map=ssurgo separator=comma file=$PROJDIR/rhessys/ssurgo_cat_mukey.csv"
+soil_cat_mukey = arg[1] # product from "v.db.select map=ssurgo separator=comma file=$PROJDIR/rhessys/ssurgo_cat_mukey.csv"
 soil_mukey_texture = arg[2] # product from "Rscript ssurgo_extraction.R $downloadedSSURGO_directory"
 
 cat_mukey = read.csv(soil_cat_mukey, stringsAsFactors=F)
