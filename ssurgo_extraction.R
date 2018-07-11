@@ -90,7 +90,7 @@ for(i in 1:length(mukey)){
 	
 }#i
 
-write.csv(mukeyHold, paste(arg[1],'/ssurgo_extract.csv',sep=''),row.names=F)
+write.csv(mukeyHold, paste(arg[1],'/soil_mukey_texture.csv',sep=''),row.names=F)
 
 
 
