@@ -1,5 +1,5 @@
 arg=commandArgs(T)
-arg=c('/Users/laurencelin/Downloads/BeaverCk/rhessys/soil_cat_mukey.csv','/Users/laurencelin/Downloads/BeaverCk/raw_data/VA003/soil_mukey_texture.csv')
+
 
 library(rgrass7)
 

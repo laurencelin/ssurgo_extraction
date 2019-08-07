@@ -6,7 +6,7 @@ chtexturTitle=c('texcl','lieutex','chtgkey','chtkey')
 chporesTitle=c('poreqty','poresize','porecont','poreshp','rvindicator','chkey','chporeskey')
 
 
-arg=commandArgs(T); arg=c('/Users/laurencelin/Downloads/BeaverCk/raw_data/VA003')
+arg=commandArgs(T); 
 target = paste(arg[1],'/tabular',sep='') # e.g., 'VA113/tabular'
 
 
