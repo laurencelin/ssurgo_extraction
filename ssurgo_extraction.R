@@ -8,7 +8,7 @@ chporesTitle=c('poreqty','poresize','porecont','poreshp','rvindicator','chkey','
 
 arg=commandArgs(T); 
 target = paste(arg[1],'/tabular',sep='') # e.g., 'VA113/tabular'
-
+print(target)
 
 
 mapunit = read.table(paste(target,'/mapunit.txt',sep=''),sep='|',stringsAsFactors=F) #mukey
@@ -43,7 +43,8 @@ colnames(chtextur) = chtexturTitle
 	# 7 porosity
 	# 8 soilthickness
 	# 9 organ matter 
-	
+    # AWC?
+
 	# relationshup
 	# 1 mukey: N cokey (componments) : N chkey (horizons)
  	#        : fraction "comppct_r"  : fraction "hzdepb_r" -> thickness
@@ -169,18 +170,18 @@ for(i in 1:length(mukey)){
 		        horizonSummaryTable$sand = replaceNA0(chorizon[cond2,'sandtotal_r']*0.01, default_soil['sand']); #% -> [0,1]
 		        horizonSummaryTable$silt = replaceNA0(chorizon[cond2,'silttotal_r']*0.01, default_soil['silt']); #% -> [0,1]
 		        horizonSummaryTable$clay = replaceNA0(chorizon[cond2,'claytotal_r']*0.01, default_soil['clay']); #% -> [0,1]
-		        horizonSummaryTable$BD = chorizon[cond2,'dbovendry_r'] #g/cm3
-		        horizonSummaryTable$fc = chorizon[cond2,'wthirdbar_r']*0.01 #% -> [0,1]
-		        horizonSummaryTable$awc = chorizon[cond2,'awc_r']*0.01 # cm/cm
-		        horizonSummaryTable$kffact = chorizon[cond2,'kffact'] # soil erodibility factor
-		        horizonSummaryTable$om = chorizon[cond2,'om_r']*0.01 #% -> [0,1]
-		        horizonSummaryTable$density = chorizon[cond2,'partdensity'] # g/cm3
+                horizonSummaryTable$BD = chorizon[cond2,'dbovendry_r'] #g/cm3 bulk density [0.02 - 2.6]; the oven dry weight of the less than 2 mm soil material per unit volume of soil exclusive of the desication cracks, measured on a costed clod;
+                horizonSummaryTable$fc = chorizon[cond2,'wthirdbar_r']*0.01 #% -> [0,1]; field capacity; the volumetric content of soil water retained at the tension of 1/3 bar (33 kPa), expressed as a percentage of the whole soil.
+                horizonSummaryTable$awc = chorizon[cond2,'awc_r']*0.01 # cm/cm; Amount of water that an increment of soil depth, inclusive of fragements, can store that is available to plants.
+                horizonSummaryTable$kffact = chorizon[cond2,'kffact'] # soil erodibility factor [0-1]; an erodibility factor which quantifies the susceptibility of doil particles to detechment by water
+                horizonSummaryTable$om = chorizon[cond2,'om_r']*0.01 #% -> [0,1]; the amount by weight of decomposed plant and animal residue expressed as weight percentage of the less than 2 mm soil material (not the top 2 mm soil!).
+                horizonSummaryTable$density = chorizon[cond2,'partdensity'] # g/cm3; [0.01 - 5] mass per unit volume (not including pore space) of the solid particle either mineral or organic.
                 # ...
                 horizonData_zdown = chorizon[cond2,'hzdepb_r']*0.01
                 horizonData_zup = chorizon[cond2,'hzdept_r']*0.01
-                horizonData_ksat = chorizon[cond2,'ksat_r']*1e-6*3600*24
-                horizonData_por = chorizon[cond2,'wsatiated_r']*0.01
-                horizonSummaryTable$ksat = replaceNA0(chorizon[cond2,'ksat_r']*1e-6*3600*24, default_soil['ksat']); # m/day
+                horizonData_ksat = chorizon[cond2,'ksat_r']*1e-6*3600*24 # um/s [0-705] --> m/day; the amount of water that would move verticaly through a unit area of saturated soil un inut time under unit hydraulic gradient.
+                horizonData_por = chorizon[cond2,'wsatiated_r']*0.01; # %; estimated volumetric soil water content at or near zero bar tension, expressed as a percentage of the whole soil.
+                horizonSummaryTable$ksat = replaceNA0(chorizon[cond2,'ksat_r']*1e-6*3600*24, default_soil['ksat']); # m/day;
 		            horizonSummaryTable$ksat[horizonSummaryTable$ksat<=0] = 0.001 # m/day
 		        horizonSummaryTable$POR = replaceNA0(chorizon[cond2,'wsatiated_r']*0.01, default_soil['POR']); #% -> [0,1]
 		            horizonSummaryTable$POR[horizonSummaryTable$POR<=0] = 0.01
