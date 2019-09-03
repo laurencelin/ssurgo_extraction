@@ -7,7 +7,6 @@ chporesTitle=c('poreqty','poresize','porecont','poreshp','rvindicator','chkey','
 
 
 arg=commandArgs(T);
-arg=c('/Users/laurencelin/Library/Mobile Documents/com~apple~CloudDocs/Workspace/current_projects/baisman_new_setup/raw_data/MD005')
 target = paste(arg[1],'/tabular',sep='') # e.g., 'VA113/tabular'
 print(target)
 
