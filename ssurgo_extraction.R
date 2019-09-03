@@ -6,7 +6,8 @@ chtexturTitle=c('texcl','lieutex','chtgkey','chtkey')
 chporesTitle=c('poreqty','poresize','porecont','poreshp','rvindicator','chkey','chporeskey')
 
 
-arg=commandArgs(T); 
+arg=commandArgs(T);
+arg=c('/Users/laurencelin/Library/Mobile Documents/com~apple~CloudDocs/Workspace/current_projects/baisman_new_setup/raw_data/MD005')
 target = paste(arg[1],'/tabular',sep='') # e.g., 'VA113/tabular'
 print(target)
 
@@ -55,8 +56,13 @@ replaceNA0 = function(x,value){
 }#function
 
 horizonOrder = c('O','A','E','B','C','R')	# there is horizon 'H' H horizons or layers: Layers dominated by organic material, formed from accumulations of undecomposed or partially decomposed organic material at the soil surface which may be underwater. All H horizons are saturated with water for prolonged periods or were once saturated but are now artificially drained. An H horizon may be on top of mineral soils or at any depth beneath the surface if it is buried. (http://www.fao.org/3/w8594e/w8594e0g.htm)
+    # H - B microbial activities, but no evidence of such activities in C or deeper
+    # plant roots can penetrate C horizon
+    # R is hard bedrock
 
 horizonThicknessDefault = c(2, 5, 5, 10, 10, 10)*0.0254 #inches to meter; https://www.sheffield.ac.uk/ssa/soil-facts/horizons
+horizonUpperZDefault = c(0, cumsum(horizonThicknessDefault)[1:(length(horizonThicknessDefault)-1)])
+horizonlowerZDefault = cumsum(horizonThicknessDefault)[1:length(horizonThicknessDefault)]
 
 	# this part need to be read in from a file!
 	soilscoreNames = c('Clay','Silty clay','Silty clay loam','Sandy clay','Sandy clay loam','Clay loam','Silt','Silt loam','Loam','Sand','Loamy sand','Sandy loam')
@@ -78,16 +84,16 @@ mukeyHold = matrix(NA,length(mukey), 19);
 profileDEPTH = seq(0,10,0.01)
 profile_ksat_table = data.frame(z=profileDEPTH)
 profile_POR_table = data.frame(z=profileDEPTH)
-for(i in 1:length(mukey)){
+for(i in seq_along(mukey)){
 	## for each mukey, we have N cokey
     ## mukey soil texture class
     
     
 	cond1 = comp[,'mukey']== mukey[i]; sum(cond1)
 	
-	## overall soil type; not component specific
+	## find overall soil type and develop default parameter values; not component/horizon specific
 	overall_NODATA = F
-    cond25 = chorizon[,'cokey'] %in% comp[cond1,'cokey']; sum(cond25) # old code: cond25 = chorizon[,'cokey']%in%icokey
+    cond25 = chorizon[,'cokey'] %in% comp[cond1,'cokey']; sum(cond25)
     if(sum(cond25)>0){
     	cond3 = chtexgrp[,'chkey'] %in% chorizon[cond25,'chkey']; sum(cond3)
 	    cond4 = chtextur[,'chtgkey'] %in% chtexgrp[cond3,'chtgkey']; sum(cond4)
@@ -120,25 +126,26 @@ for(i in 1:length(mukey)){
     }# cond25
 	
 	
-	## checking all the components and horizons
+	## find all the components and horizons and extract specific information
 	if(! overall_NODATA){
-		
-		
 		
 		## developing component (vertical partition) > horizon (horizonal partition)
 		componentSummary_zdown = list()
 		componentSummary_zup = list()
 		componentSummary_ksat = list()
 		componentSummary_por = list()
-		componentSummaryTable = as.data.frame(t(sapply( comp[cond1,'cokey'], function(cokey){
+        componentSummary_ksat_profile = list()
+        componentSummary_por_profile = list()
+		componentSummaryTable = as.data.frame( do.call(rbind, lapply( comp[cond1,'cokey'], function(cokey){
 			# linking horizons to component
 			
 	        # cokey = comp[cond1,'cokey'][1] # for debugging
-			cond2 = chorizon[,'cokey']== cokey; sum(cond2)
+            cond2 = chorizon[,'cokey']== cokey; sum(cond2) # finding component-specific horizons
 			if(sum(cond2)>0){
-		        
+                # found matched component-specific horizons
 		        component_NODATA = F
-		        # sort the component specific soil types
+                
+		        # sort the component specific soil types --> develop component-specific default parameters
 		        cond3 = chtexgrp[,'chkey'] %in% chorizon[cond2,'chkey']; sum(cond3)
 		        cond4 = chtextur[,'chtgkey'] %in% chtexgrp[cond3,'chtgkey']; sum(cond4)
 		        default_soil = table(soilscore[match(chtextur[cond4,1], soilscoreNames)]); length(default_soil)
@@ -153,75 +160,103 @@ for(i in 1:length(mukey)){
 		            sand = sum(soilscore_db$sand[default_soil_index]*default_soil_weight),
 		            silt = sum(soilscore_db$silt[default_soil_index]*default_soil_weight),
 		            clay = sum(soilscore_db$clay[default_soil_index]*default_soil_weight),
-					por_size_index = sum(soilscore_db$por_size_index[default_soil_index]*default_soil_weight),
-					psi_air_entry = sum(soilscore_db$psi_air_entry[default_soil_index]*default_soil_weight),
-					albedo = sum(soilscore_db$albedo[default_soil_index]*default_soil_weight),
+                    por_size_index = sum(soilscore_db$por_size_index[default_soil_index]*default_soil_weight),  # <<-- not from surrgo
+                    psi_air_entry = sum(soilscore_db$psi_air_entry[default_soil_index]*default_soil_weight),    # <<-- not from surrgo
+                    albedo = sum(soilscore_db$albedo[default_soil_index]*default_soil_weight),                  # <<-- not from surrgo
 		            ksat = sum(soilscore_db$ksat[default_soil_index]*default_soil_weight),
 		            POR = sum(soilscore_db$por[default_soil_index]*default_soil_weight)
 		            ))#
 	
+    
 		        horizonSummaryTable = data.frame(id = chorizon[cond2,'chkey'])
-		        horizonSummaryTable$horizonThinkness = (chorizon[cond2,'hzdepb_r']-chorizon[cond2,'hzdept_r'])*0.01 #cm -> m
-		        horizonSummaryTable$horizonMeanDepth = 0.5*(chorizon[cond2,'hzdepb_r']+chorizon[cond2,'hzdept_r'])*0.01 # m (real depth)
-		        horizonSummaryTable$horizonName = chorizon[cond2,'hzname']
-		            deephorizonname = match(substr(gsub('[a-z0-9, ]','',horizonSummaryTable$horizonName[which.max(horizonSummaryTable$horizonMeanDepth)]),1,1), horizonOrder)
-		            if(length(deephorizonname)<=0) deephorizonname=NA
-		            
-		        horizonSummaryTable$sand = replaceNA0(chorizon[cond2,'sandtotal_r']*0.01, default_soil['sand']); #% -> [0,1]
+                horizonSummaryTable$horizonThinkness = NA#(chorizon[cond2,'hzdepb_r']-chorizon[cond2,'hzdept_r'])*0.01 #cm -> m
+                horizonSummaryTable$horizonMeanDepth = NA#0.5*(chorizon[cond2,'hzdepb_r']+chorizon[cond2,'hzdept_r'])*0.01 # m (real depth)
+                horizonSummaryTable$horizonTopDepth = chorizon[cond2,'hzdept_r']*0.01 #m
+                horizonSummaryTable$horizonBottomDepth = chorizon[cond2,'hzdepb_r']*0.01 #m <<-- for microbial activities depth & max root depth
+                # microbial activities stop at the bottom of B
+                # max plant root could be at the bottom of C
+		        horizonSummaryTable$horizonName = sapply(chorizon[cond2,'hzname'],function(nn){
+                    tmp = sapply(horizonOrder, function(x){grepl(x,nn)})
+                    if(sum(tmp)>0) return <- horizonOrder[tmp]
+                    else return <- nn
+                })#
+                horizonSummaryTable$horizonIndex = match(horizonSummaryTable$horizonName,horizonOrder)
+                horizonSummaryTable$sand = replaceNA0(chorizon[cond2,'sandtotal_r']*0.01, default_soil['sand']); #% -> [0,1]
 		        horizonSummaryTable$silt = replaceNA0(chorizon[cond2,'silttotal_r']*0.01, default_soil['silt']); #% -> [0,1]
 		        horizonSummaryTable$clay = replaceNA0(chorizon[cond2,'claytotal_r']*0.01, default_soil['clay']); #% -> [0,1]
+                
                 horizonSummaryTable$BD = chorizon[cond2,'dbovendry_r'] #g/cm3 bulk density [0.02 - 2.6]; the oven dry weight of the less than 2 mm soil material per unit volume of soil exclusive of the desication cracks, measured on a costed clod;
                 horizonSummaryTable$fc = chorizon[cond2,'wthirdbar_r']*0.01 #% -> [0,1]; field capacity; the volumetric content of soil water retained at the tension of 1/3 bar (33 kPa), expressed as a percentage of the whole soil.
                 horizonSummaryTable$awc = chorizon[cond2,'awc_r']*0.01 # cm/cm; Amount of water that an increment of soil depth, inclusive of fragements, can store that is available to plants.
                 horizonSummaryTable$kffact = chorizon[cond2,'kffact'] # soil erodibility factor [0-1]; an erodibility factor which quantifies the susceptibility of doil particles to detechment by water
                 horizonSummaryTable$om = chorizon[cond2,'om_r']*0.01 #% -> [0,1]; the amount by weight of decomposed plant and animal residue expressed as weight percentage of the less than 2 mm soil material (not the top 2 mm soil!).
                 horizonSummaryTable$density = chorizon[cond2,'partdensity'] # g/cm3; [0.01 - 5] mass per unit volume (not including pore space) of the solid particle either mineral or organic.
-                # ...
+                
                 horizonData_zdown = chorizon[cond2,'hzdepb_r']*0.01
                 horizonData_zup = chorizon[cond2,'hzdept_r']*0.01
                 horizonData_ksat = chorizon[cond2,'ksat_r']*1e-6*3600*24 # um/s [0-705] --> m/day; the amount of water that would move verticaly through a unit area of saturated soil un inut time under unit hydraulic gradient.
                 horizonData_por = chorizon[cond2,'wsatiated_r']*0.01; # %; estimated volumetric soil water content at or near zero bar tension, expressed as a percentage of the whole soil.
                 horizonSummaryTable$ksat = replaceNA0(chorizon[cond2,'ksat_r']*1e-6*3600*24, default_soil['ksat']); # m/day;
-		            horizonSummaryTable$ksat[horizonSummaryTable$ksat<=0] = 0.001 # m/day
+                    horizonSummaryTable$ksat[horizonSummaryTable$ksat<=0] = 0.001 # m/day
 		        horizonSummaryTable$POR = replaceNA0(chorizon[cond2,'wsatiated_r']*0.01, default_soil['POR']); #% -> [0,1]
 		            horizonSummaryTable$POR[horizonSummaryTable$POR<=0] = 0.01
 		            
-
-		        averageSoilZ = mean(horizonSummaryTable$horizonThinkness,na.rm=T); if(is.na(averageSoilZ)) averageSoilZ = 1 #m    
-		        tmp = replaceNA0(horizonSummaryTable$horizonThinkness, averageSoilZ)
-		        horizonSummaryTable$horizonWeight = tmp / sum(tmp)
-		        	# case 1: only 1 layer with NA
-		        	# case 2: some layers and one/more NAs
-	           
-	           ## forming profile 0 - 10 m
-		        dpethOrder = order(horizonSummaryTable$horizonMeanDepth)
-		        # horizonSummaryTable[dpethOrder,]
-		        
-		        if(length(dpethOrder)>1){
-                    # developing profile by each components
                     
+                # sorting horizonSummaryTable by horizonName
+                horizonNameOrder = order(horizonSummaryTable$horizonIndex)
+                horizonSummaryTable = horizonSummaryTable[horizonNameOrder,]
+                horizonSummaryTable$horizonThinkness = sapply(seq_along(horizonNameOrder),function(jj){
+                    if( is.na(horizonSummaryTable$horizonTopDepth[jj]) | horizonSummaryTable$horizonTopDepth[jj]<0 |
+                    is.na(horizonSummaryTable$horizonBottomDepth[jj]) | horizonSummaryTable$horizonBottomDepth[jj]<0){
+                        ## no data boundaries
+                        return <- horizonThicknessDefault[horizonSummaryTable$horizonIndex[jj]]
+                    }else{
+                        ## yes data define boundaries
+                        tmp = horizonSummaryTable$horizonBottomDepth[jj] - horizonSummaryTable$horizonTopDepth[jj]
+                        return <- ifelse(tmp<=0, horizonThicknessDefault[horizonSummaryTable$horizonIndex[jj]], tmp)
+                    }# if
+                })#sapply
+                endpoints = c(0, cumsum(horizonSummaryTable$horizonThinkness))
+                horizonSummaryTable$horizonTopDepth = endpoints[1:(length(endpoints)-1)]
+                horizonSummaryTable$horizonBottomDepth = endpoints[-1]
+                horizonSummaryTable$horizonMeanDepth = 0.5*(horizonSummaryTable$horizonTopDepth+horizonSummaryTable$horizonBottomDepth)
+                horizonSummaryTable$microbialActiveDepth = max(sapply(seq_along(horizonSummaryTable$horizonBottomDepth), function(ii){
+                        ifelse(horizonSummaryTable$horizonName[ii] %in% horizonOrder[1:4],horizonSummaryTable$horizonBottomDepth[ii],NA)
+                    }),na.rm=T)
+                horizonSummaryTable$maxRootDepth = max(sapply(seq_along(horizonSummaryTable$horizonBottomDepth), function(ii){
+                        ifelse(horizonSummaryTable$horizonName[ii] %in% horizonOrder[5:6],horizonSummaryTable$horizonBottomDepth[ii],1.0 )
+                    }),na.rm=T)
+                horizonSummaryTable$horizonWeight = horizonSummaryTable$horizonThinkness/sum(horizonSummaryTable$horizonThinkness)
+                
+                
+                ## extracting profile every cm from 0 to 10 m
+                numHorizon = dim(horizonSummaryTable)[1]
+		        if(numHorizon>1){
+                    # more than one horizon layers
+                    # developing profile by each components
 		            profileFunction = approxfun(horizonSummaryTable$horizonMeanDepth, horizonSummaryTable$ksat); #splinefun
-                    profileFunction_boundaryZ = c(min(horizonSummaryTable$horizonMeanDepth), max(horizonSummaryTable$horizonMeanDepth))
+                    profileFunction_boundaryZ = range(horizonSummaryTable$horizonMeanDepth)
                     profileFunction_boundaryY = c(
-                        horizonSummaryTable$ksat[dpethOrder][1],
-                        horizonSummaryTable$ksat[dpethOrder][length(dpethOrder)]
+                        horizonSummaryTable$ksat[1],
+                        horizonSummaryTable$ksat[numHorizon]
                     )
-		            profile_ksat = sapply(profileDEPTH, function(z){
+		            componentSummary_ksat_profile[[toString(cokey)]]<<- sapply(profileDEPTH, function(z){
 		                if(z<profileFunction_boundaryZ[1]) return <- profileFunction_boundaryY[1]
 		                else if(z>profileFunction_boundaryZ[2]) return <- profileFunction_boundaryY[2]
 		                else profileFunction(z)
 		            })
-                    # plot(profile_ksat, profileDEPTH, type='l', ylim=c(10,0));
+                    # plot(componentSummary_ksat_profile[[toString(cokey)]], profileDEPTH, type='l', ylim=c(2,0));
                     # points(horizonSummaryTable$ksat, horizonSummaryTable$horizonMeanDepth, col='red')
-		            
+                    # cbind(horizonSummaryTable$horizonMeanDepth, horizonSummaryTable$ksat)
+                    
                     
 		            profileFunction = approxfun(horizonSummaryTable$horizonMeanDepth, horizonSummaryTable$POR); #splinefun
-		            profileFunction_boundaryZ = c(min(horizonSummaryTable$horizonMeanDepth), max(horizonSummaryTable$horizonMeanDepth))
+		            profileFunction_boundaryZ = range(horizonSummaryTable$horizonMeanDepth)
 		            profileFunction_boundaryY = c(
-                        horizonSummaryTable$POR[dpethOrder][1],
-                        horizonSummaryTable$POR[dpethOrder][length(dpethOrder)]
+                        horizonSummaryTable$POR[1],
+                        horizonSummaryTable$POR[numHorizon]
 		            )
-		            profile_POR = sapply(profileDEPTH, function(z){
+		            componentSummary_por_profile[[toString(cokey)]]<<- sapply(profileDEPTH, function(z){
 		                if(z<profileFunction_boundaryZ[1]) return <- profileFunction_boundaryY[1]
 		                else if(z>profileFunction_boundaryZ[2]) return <- profileFunction_boundaryY[2]
 		                else profileFunction(z)
@@ -230,47 +265,77 @@ for(i in 1:length(mukey)){
                     # points(horizonSummaryTable$POR, horizonSummaryTable$horizonMeanDepth, col='red')
                     
 		        }else{
-		            profile_ksat = horizonSummaryTable$ksat[dpethOrder][1]*exp(-profileDEPTH* 0.12) # 1/8.33333
-		            profile_POR = horizonSummaryTable$POR[dpethOrder][1]*exp(-profileDEPTH* 0.00025) # decay by 1/4000
+                    # only one horizon layer from the data
+		            componentSummary_ksat_profile[[toString(cokey)]]<<- horizonSummaryTable$ksat[1]*exp(-profileDEPTH* 0.12) # 1/8.33333
+		            componentSummary_por_profile[[toString(cokey)]]<<- horizonSummaryTable$POR[1]*exp(-profileDEPTH* 0.00025) # decay by 1/4000
 		            
 		        }
 	    
-	        	# debugging per component
+	        	# debugging each component
 	        	# horizonSummaryTable
 	        	# plot(profile_ksat, profileDEPTH,type='l', ylim=c(10,0), xlim=c(0,1))
 	        	# lines(profile_POR, profileDEPTH, lty=2)
 	        
+                ## aggregating horizons to component (i.e., cokey)
 	        	componentSummary_zdown[[toString(cokey)]]<<- horizonData_zdown
 				componentSummary_zup[[toString(cokey)]]<<- horizonData_zup
 				componentSummary_ksat[[toString(cokey)]]<<- horizonData_ksat
 				componentSummary_por[[toString(cokey)]]<<- horizonData_por
-				
+                ############ <<---- working here ----->> #################
 		        return <- unlist(list(
 		        	id = cokey,
-		            horizonThinkness = sum(horizonSummaryTable$horizonThinkness,na.rm=T), # meter
-		        	deepHorizon = deephorizonname, # meter
-		            ksat = sum(horizonSummaryTable$horizonWeight * horizonSummaryTable$ksat, na.rm=T),
-		            vksat = sum(horizonSummaryTable$horizonThinkness,na.rm=T) / sum(horizonSummaryTable$horizonThinkness/horizonSummaryTable$ksat, na.rm=T), 
-		        	sand = sum(horizonSummaryTable$horizonWeight * horizonSummaryTable$sand, na.rm=T),
-		        	silt = sum(horizonSummaryTable$horizonWeight * horizonSummaryTable$silt, na.rm=T),
-		        	clay = sum(horizonSummaryTable$horizonWeight * horizonSummaryTable$clay, na.rm=T),
-		        	BD = sum(horizonSummaryTable$horizonWeight * horizonSummaryTable$BD, na.rm=T),
-		        	partdensity = sum(horizonSummaryTable$horizonWeight * horizonSummaryTable$density, na.rm=T),
-		        	fc = sum(horizonSummaryTable$horizonWeight * horizonSummaryTable$fc, na.rm=T),
-		        	awc = sum(horizonSummaryTable$horizonWeight * horizonSummaryTable$awc, na.rm=T),
-		        	kffact = sum(horizonSummaryTable$horizonWeight * horizonSummaryTable$kffact, na.rm=T),
-		        	om = sum(horizonSummaryTable$horizonWeight * horizonSummaryTable$om, na.rm=T),
-		            
-		            profile_POR,
-		            profile_ksat
+		            Thinkness = sum(horizonSummaryTable$horizonThinkness,na.rm=T), # meter
+		        	down2Horizon = horizonSummaryTable$horizonIndex[numHorizon],
+                    # ... general lumped proporties (not being used in RHESSys)
+                    kffact = sum(horizonSummaryTable$horizonWeight * horizonSummaryTable$kffact, na.rm=T),
+                    fc = sum(horizonSummaryTable$horizonWeight * horizonSummaryTable$fc, na.rm=T),
+                    # ... lumped proporties solute sorption (in deep soil)
+                    partdensity = sum(horizonSummaryTable$horizonWeight * horizonSummaryTable$density, na.rm=T),
+                    om = sum(horizonSummaryTable$horizonWeight * horizonSummaryTable$om, na.rm=T),
+                    BD = sum(horizonSummaryTable$horizonWeight * horizonSummaryTable$BD, na.rm=T),
+                        # PARTICLE_DENSITY 2.65  - soil particle density g/cm3 (Dingman) in RHESSys is
+                        # a) used to calculate kg_soil -> soil NO3 density (Parton et al. 1996; µgN/g soil)
+                        # b) used to calculate kg_soil -> max_nit_rate = kg_soil * MAX_RATE * 1e-06; // (mgN/kg soil/day) * (kg soil/m2) ==> mgN/m2/day ==> 1e-06 kgN/m2/day (Parton et al. 1996)
+                        # c) use to calculate "absorptionConst" = PARTICLE_DENSITY * 1000.0 * N_absorption_rate;
+                        # ammonium binding to soil (https://crops.extension.iastate.edu/cropnews/2019/03/understanding-anhydrous-ammonia-application-soil):
+                        # dissolved ammonium reacts with soil organic matter and clay, and ammonium ions attach on the soil cation exchange complex; These reactions all tend to limit the movement of ammonia
+                        # Cation-exchange capacity is a measure of how many cations can be retained on soil particle surfaces. Negative charges on the surfaces of soil particles bind positively-charged atoms or molecules, but allow these to exchange with other positively charged particles in the surrounding soil water
+                        # so what binds ammonium in the soil is not the soil mineral!
+                        # However, DOC is usually negative charge (soil anion sorption), but DOC has some functional groupswhich form positive sites.
+                        # DOC sorption is mostly via anion exchange in the soil depth (mineral density)
+                        # most soil particles are nagetively charged, but some anions (e.g., metal oxides) are also bound
+                        # soil anion exchange capacity is much lower than the cation exchange capacity (differen by 20X less)
+                        # in general both exchanges are highly related to clay
+                        # additionally, DON and DOP behave differently than DOC
+                    # ... lumped porporties for biochemistry in soil column (0 - horizon B)...
+                    # microbial activities stop at the bottom of B
+                    # max plant root could be at the bottom of C
+                    clay = sum(horizonSummaryTable$horizonWeight * horizonSummaryTable$clay, na.rm=T),
+                    sand = sum(horizonSummaryTable$horizonWeight * horizonSummaryTable$sand, na.rm=T),
+                    silt = sum(horizonSummaryTable$horizonWeight * horizonSummaryTable$silt, na.rm=T), # not used for any calculations
+                    
+    
+                    
+                    awc = sum(horizonSummaryTable$horizonWeight * horizonSummaryTable$awc, na.rm=T),
+                    #awc: cm/cm; Amount of water that an increment of soil depth, inclusive of fragements, can store that is available to plants. volume fraction and is commonly estimated as the difference between the water contents at 1/3 and 15 bars (permanent wilting point).
+                    #POR: estimated volumetric soil water content at or near zero bar tension, expressed as a percentage of the whole soil.
+                    
+                    # not reporting here; profile should be studied after merging components
+                    # ... if ksat0 and ksat_decay are calculated correctly from the ssurgo dataset
+                    # A) last Ksat matching; (last or certain meter depth?)
+                    # B) ksat area equal
+                    #ksat = sum(horizonSummaryTable$horizonWeight * horizonSummaryTable$ksat, na.rm=T),
+                    #vksat = sum(horizonSummaryTable$horizonThinkness,na.rm=T) / sum(horizonSummaryTable$horizonThinkness/horizonSummaryTable$ksat, na.rm=T)
 		        ))
                 # within cond2 if
 	        }else{
-	        	# no data
+	        	# component_NODATA = T
 	        	componentSummary_zdown[[toString(cokey)]]<<- NA
 				componentSummary_zup[[toString(cokey)]]<<- NA
 				componentSummary_ksat[[toString(cokey)]]<<- NA
 				componentSummary_por[[toString(cokey)]]<<- NA
+                componentSummary_ksat_profile[[toString(cokey)]]<<- NA
+                componentSummary_por_profile[[toString(cokey)]]<<- NA
 	        	return <- unlist(list(
 		        	id = cokey,
 		            horizonThinkness = NA, # meter
@@ -285,14 +350,10 @@ for(i in 1:length(mukey)){
 		        	fc = NA,
 		        	awc = NA,
 		        	kffact = NA,
-		        	om = NA, #14
-		            
-		            rep(NA,1001),
-		            rep(NA,1001)
+		        	om = NA #14
 		        ))
 	        }#if else 
-		})))# end of construction: componentSummaryTable
-		#componentSummaryTable$por = 1 - componentSummaryTable$BD/componentSummaryTable$partdensity
+		})) )# end of construction: componentSummaryTable
 		componentSummaryTable$Percent = comp[cond1,'comppct_r']
 		componentSummaryTable$Weight = componentSummaryTable$Percent/sum(componentSummaryTable$Percent)
 		componentSummaryTable$profileWeight = rep(NA, dim(componentSummaryTable)[1])
@@ -490,21 +551,21 @@ write.csv(profile_POR_table, paste(arg[1],'/soil_mukey_por.csv',sep=''),row.name
 	# 46  47 144 166 168 169 170 171 172 182 197 202
 	#mukeyHold[46,]
 	
-	mukeyHold = read.csv(paste(arg[1],'/soil_mukey_texture.csv',sep=''))
-	which(mukeyHold$mukey == 2403674) # 22
-	which(mukeyHold$mukey == 2403693) # 41
-	which(mukeyHold$mukey == 2403885) # 42
-	which(mukeyHold$mukey == 2403681) # 29
+	# mukeyHold = read.csv(paste(arg[1],'/soil_mukey_texture.csv',sep=''))
+	# which(mukeyHold$mukey == 2403674) # 22
+	# which(mukeyHold$mukey == 2403693) # 41
+	# which(mukeyHold$mukey == 2403885) # 42
+	# which(mukeyHold$mukey == 2403681) # 29
 	
-	profile_ksat_table = read.csv(paste(arg[1],'/soil_mukey_ksat.csv',sep=''))
-	plot(profile_ksat_table[,29+1], profileDEPTH,type='l', ylim=c(3,0), xlim=c(0,10) )
-	for(i in 2:204) lines(profile_ksat_table[,1+i], profileDEPTH)
+	# profile_ksat_table = read.csv(paste(arg[1],'/soil_mukey_ksat.csv',sep=''))
+	# plot(profile_ksat_table[,29+1], profileDEPTH,type='l', ylim=c(3,0), xlim=c(0,10) )
+	# for(i in 2:204) lines(profile_ksat_table[,1+i], profileDEPTH)
 	
-	profile_POR_table = read.csv(paste(arg[1],'/soil_mukey_por.csv',sep=''))
-	plot(profile_POR_table[,1+1], profileDEPTH,type='l', ylim=c(3,0), xlim=c(0,1) )
-	for(i in 2:204) lines(profile_POR_table[,1+i], profileDEPTH)
+	# profile_POR_table = read.csv(paste(arg[1],'/soil_mukey_por.csv',sep=''))
+	# plot(profile_POR_table[,1+1], profileDEPTH,type='l', ylim=c(3,0), xlim=c(0,1) )
+	# for(i in 2:204) lines(profile_POR_table[,1+i], profileDEPTH)
 	
 	
 
-# 21
+
 
