@@ -44,7 +44,7 @@ mukey_texture = read.csv(soil_mukey_texture, stringsAsFactors=F)
 	rast$soil_texture = cat_texture[cond2]; writeRAST(rast,'soil_BD',zcol='soil_texture',overwrite=T)
 
     cat_texture = mukey_texture[cond,'partdensity']
-    rast$soil_texture = cat_texture[cond2]; writeRAST(rast,'soil_horizonDepth',zcol='soil_texture',overwrite=T)
+    rast$soil_texture = cat_texture[cond2]; writeRAST(rast,'soil_PD',zcol='soil_texture',overwrite=T)
 
 	cat_texture = mukey_texture[cond,'soilDepth']
 	rast$soil_texture = cat_texture[cond2]; writeRAST(rast,'soil_horizonDepth',zcol='soil_texture',overwrite=T)
