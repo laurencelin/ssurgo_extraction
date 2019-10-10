@@ -201,7 +201,7 @@ profileRates = do.call(rbind, lapply(what_LEN, function(ii){
 		ksat0 = exp(ksat_cof[1]),
 		ksatdecay = ifelse(abs(1/ksat_cof[2])>4000,4000,-1/ksat_cof[2]),
 		por0 = exp(por_cof[1]),
-		pordecay = ifelse(abs(1/por_cof[2])>4000,4000,-1/por_cof[2])
+		pordecay = ifelse(abs(1/por_cof[2])>4000,4000,-1/por_cof[2]),
         om0 = exp(om_cof[1]),
         omdecay = ifelse(abs(1/om_cof[2])>4000,4000,-1/om_cof[2])
 	))# 
