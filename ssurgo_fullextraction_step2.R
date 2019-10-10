@@ -75,6 +75,7 @@ what = data.frame(
 	soil_b_sand = horizons[LOCATION_cat_mukey,'B_sand'],
 	soil_b_clay = horizons[LOCATION_cat_mukey,'B_clay'],
 	soil_b_silt = horizons[LOCATION_cat_mukey,'B_silt'],
+    soil_c_om = horizons[LOCATION_cat_mukey,'C_om'],
 	soil_r_thickness = horizons[LOCATION_cat_mukey,'R_horizonThinkness'],
 	soil_r_active_ratio = (horizons[LOCATION_cat_mukey,'A_horizonThinkness']+horizons[LOCATION_cat_mukey,'B_horizonThinkness']+horizons[LOCATION_cat_mukey,'C_horizonThinkness']+horizons[LOCATION_cat_mukey,'R_horizonThinkness'])/(horizons[LOCATION_cat_mukey,'A_horizonThinkness']+horizons[LOCATION_cat_mukey,'B_horizonThinkness']),
     soil_r_maxrtz_ratio = (horizons[LOCATION_cat_mukey,'A_horizonThinkness']+horizons[LOCATION_cat_mukey,'B_horizonThinkness']+horizons[LOCATION_cat_mukey,'C_horizonThinkness']+horizons[LOCATION_cat_mukey,'R_horizonThinkness'])/(horizons[LOCATION_cat_mukey,'A_horizonThinkness']+horizons[LOCATION_cat_mukey,'B_horizonThinkness']+horizons[LOCATION_cat_mukey,'C_horizonThinkness'])
@@ -147,6 +148,7 @@ while(sum(what$check)>0){
 		if(is.na(what$soil_b_clay[ii])) finalTable $soil_b_clay[ii] = weightedAverage(what$soil_b_clay[cond], weights[cond])
 		if(is.na(what$soil_b_silt[ii])) finalTable $soil_b_silt[ii] = weightedAverage(what$soil_b_silt[cond], weights[cond])
         
+        if(is.na(what$soil_c_om[ii])) finalTable $soil_c_om[ii] = weightedAverage(what$soil_c_om[cond], weights[cond])
         ##----------- fixing rtz and soildepth, 4011
         # finalTable[ii,]
         finaldepth = max(
