@@ -2,13 +2,13 @@ arg=commandArgs(T)
 
 library(rgrass7)
 
-rast = readRAST('soil_ssurgo')
-soil_rhessys = read.csv(arg[1], stringsAsFactors=F)
+rast = readRAST(arg[1])
+soil_rhessys = read.csv(arg[2], stringsAsFactors=F)
 
 	
 	# sorting matched mukey to the map organization
 	cond2 = match(rast@data[[1]], soil_rhessys[,'cat'])
-	if(length(arg)>1){ suffix = arg[2]; } else { suffix=''; }
+	if(length(arg)>2){ suffix = arg[3]; } else { suffix=''; }
     # texture class
     rast$soil_texture = as.integer(soil_rhessys[cond2,'texture']); writeRAST(rast,paste('soil_texture',suffix,sep=''),zcol='soil_texture',overwrite=T)
 	
