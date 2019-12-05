@@ -9,7 +9,7 @@ soil_mukey_texture = arg[2]
 
 cat_mukey = read.csv(soil_cat_mukey, stringsAsFactors=F,header=F)
 if( is.numeric(cat_mukey[1,1]) ){
-    colnames(cat_mukey) = c('x','y','cat','mukey')
+    colnames(cat_mukey) = c('x','y','cat','MUKEY')
 }else{
     cat_mukey = read.csv(soil_cat_mukey, stringsAsFactors=F)
 }
