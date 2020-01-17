@@ -83,6 +83,7 @@ what = data.frame(
 cond = !is.na(what$soildepth) & !is.na(what$soil_maxrootdepth) & (what$soildepth < what$soil_maxrootdepth);sum(cond)
 cond = !is.na(what$soildepth) & !is.na(what$soil_activedepth) & (what$soildepth < what$soil_activedepth);sum(cond)
 cond = !is.na(what$soil_maxrootdepth) & !is.na(what$soil_activedepth) & (what$soil_maxrootdepth < what$soil_activedepth);sum(cond)
+cond = !is.na(what$soildepth); sum(cond); dim(what)[1]
 # what[cond,c('mukey','soildepth','soil_maxrootdepth','soil_activedepth')][1:10,]
 
 what$check = sapply(seq_len(dim(what)[1]),function(ii){ sum(is.na(what[ii,]))>0 })
@@ -186,16 +187,36 @@ full_wa = finalTable$soil_a_thickness/(finalTable$soil_a_thickness+finalTable$so
 full_wb = finalTable$soil_b_thickness/(finalTable$soil_a_thickness+finalTable$soil_b_thickness+finalTable$soil_c_thickness)
 full_wc = 1 - full_wa - full_wb
 
+	# debug:
+	# range(finalTable$soil_a_meanz)
+	# range(finalTable$soil_a_ksat)
+	# range(finalTable$soil_a_POR)
+	# range(finalTable$soil_a_om)
+	
+	# range(finalTable$soil_b_meanz)
+	# range(finalTable$soil_b_ksat)
+	# range(finalTable$soil_b_POR)
+	# range(finalTable$soil_b_om) ##<---- 0 om
+	
+	# range(finalTable$soil_c_meanz)
+	# range(finalTable$soil_c_ksat)
+	# range(finalTable$soil_c_POR)
+	# range(finalTable$soil_c_om) ##<---- 0 om
+	
 profileRates = do.call(rbind, lapply(what_LEN, function(ii){
 	profile = data.frame(
 		z = c(finalTable$soil_a_meanz[ii],finalTable$soil_b_meanz[ii],finalTable$soil_c_meanz[ii]),
 		ksat = c(finalTable$soil_a_ksat[ii], finalTable$soil_b_ksat[ii], finalTable$soil_c_ksat[ii]),
-		ksat_log = log(c(finalTable$soil_a_ksat[ii], finalTable$soil_b_ksat[ii], finalTable$soil_c_ksat[ii])),
 		por = c(finalTable$soil_a_POR[ii], finalTable$soil_b_POR[ii], finalTable$soil_c_POR[ii]),
-		por_log = log(c(finalTable$soil_a_POR[ii], finalTable$soil_b_POR[ii], finalTable$soil_c_POR[ii])),
-        om = c(finalTable$soil_a_om[ii], finalTable$soil_b_om[ii], finalTable$soil_c_om[ii]),
-        om_log = log(c(finalTable$soil_a_om[ii], finalTable$soil_b_om[ii], finalTable$soil_c_om[ii]))
-	)
+        om = c(finalTable$soil_a_om[ii], finalTable$soil_b_om[ii], finalTable$soil_c_om[ii])
+	)#
+	if(sum(profile$ksat<=0)>0){ print(paste('soil profile',ii,'has 0 ksat')); profile$ksat[profile$ksat<=0]=0.0001; }
+	if(sum(profile$por <=0)>0){ print(paste('soil profile',ii,'has 0 por' )); profile$por[profile$por <=0]=0.0001; }
+	if(sum(profile$om<=0)>0){ profile$om[profile$om<=0]=0.00001; }
+	ksat_log = log(profile$ksat)
+	por_log = log(profile$por)
+	om_log = log(profile$om)
+	
 	ksat_cof = lm(ksat_log~z,profile)$coefficient
 	por_cof = lm(por_log~z,profile)$coefficient
     om_cof = lm(om_log~z,profile)$coefficient
