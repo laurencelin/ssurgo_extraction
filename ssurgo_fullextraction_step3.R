@@ -1,6 +1,10 @@
 arg=commandArgs(T)
 
+library(sp)
+library(XML)
 library(rgrass7)
+library(rgdal)
+tryCatch({ use_sp() },error=function(cond){message(cond)},warning=function(cond){message(cond)},finally={message("Please update the rgrass7 package on R")})
 
 rast = readRAST(arg[1])
 soil_rhessys = read.csv(arg[2], stringsAsFactors=F)
