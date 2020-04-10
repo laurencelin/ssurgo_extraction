@@ -1,7 +1,11 @@
 arg=commandArgs(T)
 
 
+library(sp)
+library(XML)
 library(rgrass7)
+library(rgdal)
+tryCatch({ use_sp() },error=function(cond){message(cond)},warning=function(cond){message(cond)},finally={message("Please update the rgrass7 package on R")})
 
 rast = readRAST('soil_ssurgo')
 soil_cat_mukey = arg[1] 
