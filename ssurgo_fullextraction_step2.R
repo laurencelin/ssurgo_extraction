@@ -213,13 +213,21 @@ profileRates = do.call(rbind, lapply(what_LEN, function(ii){
 	if(sum(profile$ksat<=0)>0){ print(paste('soil profile',ii,'has 0 ksat')); profile$ksat[profile$ksat<=0]=0.0001; }
 	if(sum(profile$por <=0)>0){ print(paste('soil profile',ii,'has 0 por' )); profile$por[profile$por <=0]=0.0001; }
 	if(sum(profile$om<=0)>0){ profile$om[profile$om<=0]=0.00001; }
-	ksat_log = log(profile$ksat)
-	por_log = log(profile$por)
-	om_log = log(profile$om)
-	
+	profile$ksat_log = log(profile$ksat)
+	profile$por_log = log(profile$por)
+	profile$om_log = log(profile$om)
+    
 	ksat_cof = lm(ksat_log~z,profile)$coefficient
 	por_cof = lm(por_log~z,profile)$coefficient
     om_cof = lm(om_log~z,profile)$coefficient
+    if(om_cof[2]>0){
+        zz = c(finalTable$soil_a_meanz[ii],finalTable$soil_b_meanz[ii],finalTable$soil_c_meanz[ii], finalTable$soildepth[ii])
+        omAdjust_log0 = log(c(finalTable$soil_a_om[ii], finalTable$soil_b_om[ii], finalTable$soil_c_om[ii],0.8*finalTable$soil_c_om[ii]))
+        omAdjust_log = omAdjust_log0 - omAdjust_log0[1]
+        om_cof=lm(omAdjust_log~0+zz)$coefficient;
+        om_cof[1]=om_cof[1]+omAdjust_log0[1]
+    }# end of if
+    
 	return <- unlist(list(
 		ksat0 = exp(ksat_cof[1]),
 		ksatdecay = ifelse(abs(1/ksat_cof[2])>4000,4000,-1/ksat_cof[2]),
