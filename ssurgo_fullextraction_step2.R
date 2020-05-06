@@ -251,7 +251,7 @@ rhessys_soil_table = data.frame(
 	sand = finalTable$soil_a_sand*active_wa + finalTable$soil_b_sand*active_wb,
 	clay = finalTable$soil_a_clay*active_wa + finalTable$soil_b_clay*active_wb,
 	silt = finalTable$soil_a_silt*active_wa + finalTable$soil_b_silt*active_wb,
-	om = finalTable$soil_a_om + finalTable$soil_b_om, # kgC/m2
+	om = finalTable$soil_a_om + finalTable$soil_b_om + finalTable$soil_c_om, # kgC/m2
     omdecay = profileRates[,6],
 	
 	bulkdensity = finalTable$soil_a_BD*full_wa + finalTable$soil_b_BD*full_wb + finalTable$soil_c_BD*full_wc,
