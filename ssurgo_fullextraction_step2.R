@@ -221,11 +221,7 @@ profileRates = do.call(rbind, lapply(what_LEN, function(ii){
 	por_cof = lm(por_log~z,profile)$coefficient
     om_cof = lm(om_log~z,profile)$coefficient
     if(om_cof[2]>0){
-        zz = c(finalTable$soil_a_meanz[ii],finalTable$soil_b_meanz[ii],finalTable$soil_c_meanz[ii], finalTable$soildepth[ii])
-        omAdjust_log0 = log(c(finalTable$soil_a_om[ii], finalTable$soil_b_om[ii], finalTable$soil_c_om[ii],0.8*finalTable$soil_c_om[ii]))
-        omAdjust_log = omAdjust_log0 - omAdjust_log0[1]
-        om_cof=lm(omAdjust_log~0+zz)$coefficient;
-        om_cof[1]=om_cof[1]+omAdjust_log0[1]
+        om_cof = lm(om_log~z,profile, weights=1/profile$om)$coefficient
     }# end of if
     
 	return <- unlist(list(
