@@ -23,7 +23,8 @@ soildepth_act_ratio = sum(horizonThicknessDefault)/sum(horizonThicknessDefault[1
 
 horizons = read.csv(paste(arg[1],'/soil_mukey_texture.csv',sep=''),stringsAsFactors=F)
 cat_mukey = read.csv(arg[2], stringsAsFactors=F, header=F)# use command "v.out.ascii"
-colnames(cat_mukey) = c('x','y','cat','mukey')
+if(dim(cat_mukey)[2]==4) colnames(cat_mukey) = c('x','y','cat','mukey')
+if(dim(cat_mukey)[2]==5) colnames(cat_mukey) = c('x','y','cat','mukey','map')
 LOCATION_cat_mukey = match(cat_mukey[,'mukey'], horizons[,'mukey']) ## cat(LOCATION) <-- mukey
 
 
@@ -80,6 +81,7 @@ what = data.frame(
 	soil_r_active_ratio = (horizons[LOCATION_cat_mukey,'A_horizonThinkness']+horizons[LOCATION_cat_mukey,'B_horizonThinkness']+horizons[LOCATION_cat_mukey,'C_horizonThinkness']+horizons[LOCATION_cat_mukey,'R_horizonThinkness'])/(horizons[LOCATION_cat_mukey,'A_horizonThinkness']+horizons[LOCATION_cat_mukey,'B_horizonThinkness']),
     soil_r_maxrtz_ratio = (horizons[LOCATION_cat_mukey,'A_horizonThinkness']+horizons[LOCATION_cat_mukey,'B_horizonThinkness']+horizons[LOCATION_cat_mukey,'C_horizonThinkness']+horizons[LOCATION_cat_mukey,'R_horizonThinkness'])/(horizons[LOCATION_cat_mukey,'A_horizonThinkness']+horizons[LOCATION_cat_mukey,'B_horizonThinkness']+horizons[LOCATION_cat_mukey,'C_horizonThinkness'])
 )# data.frame
+if(dim(cat_mukey)[2]==5) what$map = cat_mukey[,'map']
 cond = !is.na(what$soildepth) & !is.na(what$soil_maxrootdepth) & (what$soildepth < what$soil_maxrootdepth);sum(cond)
 cond = !is.na(what$soildepth) & !is.na(what$soil_activedepth) & (what$soildepth < what$soil_activedepth);sum(cond)
 cond = !is.na(what$soil_maxrootdepth) & !is.na(what$soil_activedepth) & (what$soil_maxrootdepth < what$soil_activedepth);sum(cond)
