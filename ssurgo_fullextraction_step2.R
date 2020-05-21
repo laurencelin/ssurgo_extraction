@@ -270,7 +270,7 @@ rhessys_soil_table = data.frame(
 	por0 = profileRates[,3],
 	pordecay = profileRates[,4]
 	)# data.frame
-	
+if(dim(cat_mukey)[2]==5) rhessys_soil_table$map = finalTable[,'map']
 
 
 write.csv(rhessys_soil_table,arg[3], row.names=F)
