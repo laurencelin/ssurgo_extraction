@@ -9,7 +9,7 @@ tryCatch({ use_sp() },error=function(cond){message(cond)},warning=function(cond)
 soil_rhessys = read.csv(arg[2], stringsAsFactors=F)
 if(length(arg)>2){ suffix = arg[3]; } else { suffix=''; }
 
-if(isnull(soil_rhessys$map)){
+if(is.null(soil_rhessys$map)){
     rast = readRAST(arg[1])
     
     # sorting matched mukey to the map organization
